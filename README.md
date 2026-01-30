@@ -7,6 +7,28 @@ A real-time fatigue and engagement monitoring system for virtual classrooms usin
 ![MediaPipe](https://img.shields.io/badge/MediaPipe-Face%20Mesh-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
+## 📸 Screenshots
+
+### Student Camera - Face Detection
+![Student Camera](screenshots/student_camera.png)
+*Real-time face detection with EAR, PERCLOS, and head pose metrics*
+
+### Dashboard - High Fatigue Alert
+![Dashboard Alert](screenshots/dashboard_alert.png)
+*Warning banner when class fatigue exceeds 50%*
+
+### Live Engagement Graph & Student Status
+![Engagement Graph](screenshots/engagement_graph.png)
+*Real-time class engagement tracking with individual student metrics*
+
+### Class Session Report
+![Session Report](screenshots/session_report.png)
+*End-of-class summary with average fatigue and engagement scores*
+
+### Live Student Status Table
+![Student Status](screenshots/student_status.png)
+*Detailed view of all students with status indicators (Active, Passive, Drowsy, Distracted)*
+
 ## 📋 Overview
 
 This project implements a **client-server architecture** where:
