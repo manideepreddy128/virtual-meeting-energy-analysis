@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Student Engagement & Fatigue Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+        }
+
+        header {
+            background: #1e293b;
+            color: white;
+            padding: 25px;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            font-size: 36px;
+            margin: 0;
+        }
+
+        .section {
+            background: white;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .status-active {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-passive {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .status-distracted,
+        .status-yawning,
+        .status-drowsy {
+            color: red;
+            font-weight: bold;
+        }
+
+        canvas {
+            max-height: 300px;
+        }
+
+        .student-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ALERTS -->
+    <div id="alertBanner"
+        style="display:none; background:red; color:white; text-align:center; padding:15px; font-weight:bold; font-size:18px; position:fixed; top:0; width:100%; z-index:1000;">
+        ⚠️ WARNING: HIGH CLASS FATIGUE DETECTED (>50%)
+    </div>
+
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>Student Engagement & Fatigue Dashboard</h1>
+            <p style="color:#cbd5e1; margin:5px 0 0; font-size:14px;">
+                Reference: <span style="color:#86efac">Active (<40%)< /span> •
+                        <span style="color:#fdba74">Passive (40-70%)</span> •
+                        <span style="color:#fca5a5">Drowsy (>70%)</span>
+            </p>
+            <p style="font-size:12px; opacity:0.7; margin-top:5px;">🔒 Privacy: Only numerical metrics are processed. No
+                video stored.</p>
+        </div>
+        <button onclick="endClass()"
+            style="background: #e11d48; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer;">
+            End Class
+        </button>
+    </header>
+
+    <!-- SUMMARY CARDS -->
+    <div class="cards">
+        <div class="card">
+            <h2 id="total">0</h2>
+            <p>Total Participants</p>
+        </div>
+        <div class="card">
+            <h2 id="active">0</h2>
+            <p>Active</p>
+        </div>
+        <div class="card">
+            <h2 id="passive">0</h2>
+            <p>Passive</p>
+        </div>
+        <div class="card">
+            <h2 id="distracted">0</h2>
+            <p>Distracted</p>
+        </div>
+    </div>
+
+    <!-- AVERAGE GRAPH -->
+    <div class="section">
+        <h2>📈 Average Class Engagement</h2>
+        <canvas id="avgChart"></canvas>
+    </div>
+
+    <!-- LIVE TABLE -->
+    <div class="section">
+        <h2>👥 Live Student Status</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name (ID)</th>
+                    <th>EAR</th>
+                    <th>Eyes</th>
+                    <th>Perclos %</th>
+                    <th>Head</th>
+                    <th>Yawn</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="studentTable"></tbody>
+        </table>
+    </div>
+
+    <!-- INDIVIDUAL GRAPHS -->
+    <div class="section">
+        <h2>📊 Individual Student Engagement</h2>
+        <div class="student-charts" id="studentCharts"></div>
+    </div>
+
+    <!-- SUMMARY MODAL -->
+    <div id="summaryModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; overflow-y:auto;">
+        <div
+            style="background:white; margin: 5% auto; padding: 40px; width: 80%; max-width: 900px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+
+            <h2 style="color:#1e293b; text-align:center; margin-bottom: 10px; font-size:28px;">🏁 Class Session Report
+            </h2>
+            <p style="text-align:center; color:#64748b; margin-bottom: 30px; font-size:14px;">
+                Status Guide: <b style="color:green">Active (<40%)< /b> | <b style="color:orange">Passive (40-70%)</b> |
+                        <b style="color:red">Drowsy (>70%)</b>
+            </p>
+
+            <!-- CLASS SUMMARY METRICS -->
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; margin-bottom:30px;">
+                <div
+                    style="background:#f8fafc; padding:20px; border-radius:10px; text-align:center; border:1px solid #e2e8f0;">
+                    <h3 style="margin:0; font-size:36px; color:#2563eb;" id="sumStudents">0</h3>
+                    <p style="margin:5px 0 0; color:#64748b; font-weight:bold;">Total Students</p>
+                </div>
+                <div
+                    style="background:#f8fafc; padding:20px; border-radius:10px; text-align:center; border:1px solid #e2e8f0;">
+                    <h3 style="margin:0; font-size:36px; color:#e11d48;" id="sumFatigue">0%</h3>
+                    <p style="margin:5px 0 0; color:#64748b; font-weight:bold;">Class Avg Fatigue</p>
+                </div>
+                <div
+                    style="background:#f8fafc; padding:20px; border-radius:10px; text-align:center; border:1px solid #e2e8f0;">
+                    <h3 style="margin:0; font-size:36px; color:#16a34a;" id="sumEngagement">0</h3>
+                    <p style="margin:5px 0 0; color:#64748b; font-weight:bold;">Engagement Score</p>
+                </div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid #eee; margin:20px 0;">
+
+            <h3 style="color:#334155;">Student Details</h3>
+            <table id="summaryTable" style="width:100%; margin-top:10px; border-collapse: collapse;">
+                <thead>
+                    <tr style="background:#f4f6f8; text-align:left;">
+                        <th style="padding:15px; border-bottom:2px solid #ddd;">Student Name</th>
+                        <th style="padding:15px; border-bottom:2px solid #ddd;">Avg State</th>
+                        <th style="padding:15px; border-bottom:2px solid #ddd;">Avg Fatigue</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryBody"></tbody>
+            </table>
+
+            <!-- FOOTER OPTONS -->
+            <div style="display:flex; justify-content:space-between; margin-top:40px; gap:20px;">
+                <button onclick="document.getElementById('summaryModal').style.display='none'"
+                    style="background: #64748b; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; flex:1;">
+                    Close (View Report)
+                </button>
+                <button onclick="location.reload()"
+                    style="background: #2563eb; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; flex:1; font-weight:bold;">
+                    Start New Session ➜
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const avgCtx = document.getElementById('avgChart').getContext('2d');
+        const avgData = [];
+        const avgLabels = [];
+        let refreshInterval = null;
+
+        const avgChart = new Chart(avgCtx, {
+            type: 'line',
+            data: {
+                labels: avgLabels,
+                datasets: [{
+                    label: 'Average Fatigue (%)',
+                    data: avgData,
+                    borderColor: 'green',
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
+            }
+        });
+
+        const studentCharts = {};
+
+        async function endClass() {
+            if (!confirm("Are you sure you want to end the class?")) return;
+
+            clearInterval(refreshInterval); // Stop Live Updates
+
+            const res = await fetch('/end_class', { method: 'POST' });
+            const data = await res.json();
+
+            const students = data.students;
+            const summary = data.summary;
+
+            // Populate Top Metrics
+            // Check if summary elements exist first to avoid errors if HTML update failed
+            if (document.getElementById('sumStudents')) {
+                document.getElementById('sumStudents').innerText = summary.total_students;
+                document.getElementById('sumFatigue').innerText = summary.class_average_fatigue + "%";
+                document.getElementById('sumEngagement').innerText = summary.engagement_score;
+            }
+
+            const tbody = document.getElementById('summaryBody');
+            tbody.innerHTML = "";
+
+            for (const sid in students) {
+                const s = students[sid];
+
+                // Color code the Rows
+                let bg = "";
+                if (s.status === "DROWSY") bg = "#fee2e2"; // light red
+                else if (s.status === "PASSIVE") bg = "#ffedd5"; // light orange
+
+                tbody.innerHTML += `
+                    <tr style="background:${bg}">
+                        <td style="padding:15px; border-bottom:1px solid #eee;"><b>${s.name}</b> <span style="color:#888; font-size:12px">(${sid})</span></td>
+                        <td style="padding:15px; border-bottom:1px solid #eee; font-weight:bold;">${s.status}</td>
+                        <td style="padding:15px; border-bottom:1px solid #eee;">${s.fatigue}%</td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById('summaryModal').style.display = 'block';
+        }
+
+        async function refresh() {
+            try {
+                const res = await fetch('/students');
+                const students = await res.json();
+
+                let total = 0, active = 0, passive = 0, distracted = 0;
+                let avgFatigue = 0;
+
+                const tbody = document.getElementById('studentTable');
+                tbody.innerHTML = "";
+
+                for (const id in students) {
+                    total++;
+                    const s = students[id];
+                    const status = s.status;
+
+                    const currentFatigue = s.fatigue || 0;
+                    avgFatigue += currentFatigue;
+
+                    if (status === "ACTIVE") active++;
+                    else if (status === "PASSIVE") passive++;
+                    else distracted++;
+
+                    const row = `
+                <tr>
+                    <td><b>${s.name || "Unknown"}</b> <br><small style="color:#aaa">${id}</small></td>
+                    <td>${s.ear.toFixed(2)}</td>
+                    <td style="color:${s.eye_status === 'CLOSED' ? 'salmon' : 'lightgreen'}">${s.eye_status}</td>
+                    <td>${s.fatigue}%</td>
+                    <td style="color:${s.head_status === 'ROTATED' ? 'orange' : '#333'}">${s.head_status}</td>
+                    <td style="color:${s.yawning_status === 'YES' ? 'red' : '#333'}">${s.yawning_status}</td>
+                    <td class="status-${status.toLowerCase()}">${status}</td>
+                </tr>`;
+                    tbody.innerHTML += row;
+
+                    // INDIVIDUAL GRAPH
+                    if (!studentCharts[id]) {
+                        const div = document.createElement('div');
+                        div.innerHTML = `<canvas id="chart_${id}"></canvas>`;
+                        document.getElementById('studentCharts').appendChild(div);
+
+                        const ctx = document.getElementById(`chart_${id}`).getContext('2d');
+                        studentCharts[id] = {
+                            data: [],
+                            chart: new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: [],
+                                    datasets: [{
+                                        label: `${s.name || id} (Fatigue %)`,
+                                        data: [],
+                                        borderColor: 'blue',
+                                        fill: false,
+                                        tension: 0.3
+                                    }]
+                                },
+                                options: {
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            max: 100
+                                        }
+                                    }
+                                }
+                            })
+                        };
+                    }
+
+                    studentCharts[id].data.push(currentFatigue);
+                    studentCharts[id].chart.data.labels.push('');
+                    if (studentCharts[id].data.length > 50) {
+                        studentCharts[id].data.shift();
+                        studentCharts[id].chart.data.labels.shift();
+                    }
+
+                    studentCharts[id].chart.data.datasets[0].data = studentCharts[id].data;
+                    studentCharts[id].chart.update();
+                }
+
+                document.getElementById('total').innerText = total;
+                document.getElementById('active').innerText = active;
+                document.getElementById('passive').innerText = passive;
+                document.getElementById('distracted').innerText = distracted;
+
+                // HIGH FATIGUE ALERT LOGIC
+                // If more than 50% are Passive or Distracted
+                const troubleCount = passive + distracted;
+                const alertBanner = document.getElementById('alertBanner');
+                if (total > 0 && (troubleCount / total) > 0.5) {
+                    alertBanner.style.display = 'block';
+                } else {
+                    alertBanner.style.display = 'none';
+                }
+
+                if (total > 0) {
+                    avgData.push(avgFatigue / total);
+                    avgLabels.push('');
+                    if (avgData.length > 50) {
+                        avgData.shift();
+                        avgLabels.shift();
+                    }
+                    avgChart.update();
+                }
+            } catch (e) {
+                console.log("Waiting for server...");
+            }
+        }
+
+        refreshInterval = setInterval(refresh, 2000);
+    </script>
+
+</body>
+
+</html>

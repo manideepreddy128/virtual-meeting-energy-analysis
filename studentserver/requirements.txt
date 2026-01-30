@@ -1,0 +1,4 @@
+opencv-python
+mediapipe
+requests
+protobuf<3.20
