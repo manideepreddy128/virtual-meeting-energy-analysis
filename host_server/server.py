@@ -60,26 +60,7 @@ def update_student(data: StudentMetrics):
     return {"message": "updated"}
 
 # =========================
-# SEND DATA TO DASHBOARD
-# =========================
-@app.get("/students")
-def get_students():
-    now = time.time()
-    inactive = []
-
-    with students_lock:
-        # AUTO REMOVE DISCONNECTED STUDENTS
-        for sid, s in list(students.items()): # Create copy for safe iteration
-            if now - s["timestamp"] > 10:
-                inactive.append(sid)
-
-        for sid in inactive:
-            del students[sid]
-            
-        return JSONResponse(content=students)
-
-# =========================
-# HISTORY STORAGE
+# HISTORY STORAGE & SEND DATA TO DASHBOARD
 # =========================
 history = {} # Store data of disconnected students
 

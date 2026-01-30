@@ -1,0 +1,19 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Zip files (optional - remove if you want to keep them)
+# *.zip
